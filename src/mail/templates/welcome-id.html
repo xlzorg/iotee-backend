@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Datang di {{appName}}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 30px;
+            color: #334155;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            margin: 20px 0;
+            background: #3b82f6;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .footer {
+            font-size: 12px;
+            color: #94a3b8;
+            padding: 20px;
+            text-align: center;
+            background: #f8fafc;
+        }
+        .link {
+            word-break: break-all;
+            font-size: 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+  <div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <img src="cid:logo" alt="{{appName}} Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+  <p>Smart Data. Smarter Decisions.</p>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <h2>Selamat Datang di {{appName}}</h2>
+  <p>Halo {{username}},</p>
+
+  <p>
+    Terima kasih telah mendaftar dengan <strong>{{appName}}</strong> menggunakan akun Google. 
+  </p>
+
+  <p>
+    Kami sangat senang atas kerja sama Anda! Dengan {{appName}}, Anda dapat dengan mudah mengelola perangkat IoT Anda dan membuat keputusan yang lebih cerdas dengan data Anda.
+  </p>
+
+  <p>
+    Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi tim dukungan kami. Kami di sini untuk membantu Anda mendapatkan manfaat maksimal dari {{appName}}.
+  </p>  
+  
+  <p>
+    Jika Anda tidak membuat akun dengan {{appName}}, silakan periksa akun Google Anda.
+  </p>
+
+  <p>Hormat kami,<br><strong>Tim {{appName}}</strong></p>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Ini adalah pesan otomatis. Harap jangan membalas email ini</p>
+  <p>&copy; {{currentYear}} {{appName}}. semua hak dilindungi.</p>
+</div>
+
+  </div>
+</body>
+</html>

@@ -29,7 +29,7 @@ export class DeviceRelayService {
       });
 
       this.mqttClient.on('error', (error: Error) => {
-        console.error('DeviceRelayService: MQTT Client error:', error);
+        console.log('DeviceRelayService: MQTT Client error:', error);
       });
 
       this.mqttClient.on('close', () => {
@@ -37,7 +37,7 @@ export class DeviceRelayService {
         this.scheduleReconnect();
       });
     } catch (error: any) {
-      console.error('DeviceRelayService: Failed to initialize MQTT client:', error);
+      console.log('DeviceRelayService: Failed to initialize MQTT client:', error);
     }
   }
 

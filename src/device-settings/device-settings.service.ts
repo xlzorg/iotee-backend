@@ -37,7 +37,7 @@ export class DeviceSettingsService {
       });
 
       this.mqttClient.on('error', (error: Error) => {
-        console.error('MQTT Client error:', error);
+        console.log('MQTT Client error:', error);
       });
 
       this.mqttClient.on('close', () => {
@@ -45,13 +45,13 @@ export class DeviceSettingsService {
         this.scheduleReconnect();
       });
     } catch (error: any) {
-      console.error('Failed to initialize MQTT client:', error);
+      console.log('Failed to initialize MQTT client:', error);
     }
   }
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached. Giving up.');
+      console.log('Max reconnect attempts reached. Giving up.');
       return;
     }
 
@@ -212,7 +212,7 @@ export class DeviceSettingsService {
         }
       });
     } catch (error) {
-      console.error('MQTT publish error:', error);
+      console.log('MQTT publish error:', error);
     }
   }
 }

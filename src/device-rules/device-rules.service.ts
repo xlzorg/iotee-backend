@@ -26,7 +26,7 @@ export class DeviceRulesService {
       });
 
       this.mqttClient.on('error', (error: Error) => {
-        console.error('DeviceRulesService: MQTT Client error:', error);
+        console.log('DeviceRulesService: MQTT Client error:', error);
       });
 
       this.mqttClient.on('close', () => {

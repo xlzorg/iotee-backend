@@ -62,7 +62,7 @@ export class SensorDataService {
 
       const dataQuery = `
         SELECT time, data1, data2, data3, data4, data5, data6, data7, data8
-        FROM sensor_data_averages
+        FROM sensor_data
         WHERE device_serial_number = $1 
         AND time > NOW() - INTERVAL '${timeInterval}'
         ORDER BY time ASC 

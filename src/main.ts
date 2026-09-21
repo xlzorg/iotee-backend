@@ -69,6 +69,10 @@ async function bootstrap() {
   console.log('📡 MQTT Broker:', process.env.MQTT_BROKER_URL || 'mqtt://broker:1883');
   console.log('💾 Database:', process.env.PG_HOST || 'postgres');
   console.log('📦 MinIO:', process.env.MINIO_ENDPOINT || 'http://minio:9000');
+  console.log('💾 Database Host:             ', process.env.PG_HOST);
+  console.log('💾 Database Port:             ', process.env.PG_PORT);
+  console.log('💾 Database Name:             ', process.env.PG_DATABASE);
+
 }
 
 bootstrap();

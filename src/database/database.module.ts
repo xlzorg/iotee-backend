@@ -1,21 +1,29 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { DatabaseService } from './database.service';
-
-const pool = new Pool({
-  host: process.env.PG_HOST,
-  port: parseInt(process.env.PG_PORT || '5432', 10),
-  database: process.env.PG_DATABASE,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-});
 
 @Global()
 @Module({
   providers: [
     {
       provide: 'PG_POOL',
-      useValue: pool,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('PG_HOST', '127.0.0.1');
+        const port = Number(configService.get<string | number>('PG_PORT', 5433));
+        const database = configService.get<string>('PG_DATABASE', 'postgres');
+        const user = configService.get<string>('PG_USER', 'postgres');
+        const password = String(configService.get<string>('PG_PASSWORD', ''));
+
+        return new Pool({
+          host,
+          port,
+          database,
+          user,
+          password,
+        });
+      },
     },
     DatabaseService,
   ],

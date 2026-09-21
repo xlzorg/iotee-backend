@@ -49,29 +49,26 @@ export class AuthController {
    * Sets access and refresh tokens as secure, httpOnly cookies.
    * This is a helper method to centralize cookie logic.
    */
-  private setTokenCookies(res: Response, tokens: TokenResponseDto, rememberMe: boolean, isOAuthCallback: boolean = false) {
-    // For OAuth callbacks, use 'lax' to allow cookies to be set during cross-origin redirects
-    // For regular login, use 'strict' for better security
-    const sameSitePolicy = isOAuthCallback ? 'lax' : 'strict';
+private setTokenCookies(res: Response, tokens: TokenResponseDto, rememberMe: boolean) {
+  const isProd = process.env.NODE_ENV === 'production';
 
-    // The access token is also set as a cookie, which our JwtStrategy can extract.
-    res.cookie('access_token', tokens.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      sameSite: sameSitePolicy,
-      path: '/',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
+  const common = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' as const : 'lax' as const,
+    path: '/',
+  };
 
-    // The refresh token has a longer lifespan.
-    res.cookie('refresh_token', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: sameSitePolicy,
-      path: '/',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days or 7 days
-    });
-  }
+  res.cookie('access_token', tokens.accessToken, {
+    ...common,
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie('refresh_token', tokens.refreshToken, {
+    ...common,
+    maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
+  });
+}
 
   @Post('reset-password')
   @HttpCode(200)
@@ -272,6 +269,20 @@ export class AuthController {
 
     return newTokens;
   }
+
+  @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Get('me')
+@ApiOperation({ summary: 'Get current authenticated user' })
+@ApiResponse({ status: 200, description: 'Current user info' })
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
+async me(@Req() req: AuthenticatedRequest) {
+  // You can expand this later to return more profile data
+  return {
+    userId: req.user.userId,
+    // optionally: email, username, account_type, etc. if you join the tables
+  };
+}
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

@@ -7,53 +7,76 @@ import {
 import { DatabaseService } from '../database/database.service';
 import { SlotConfigResponseDto } from './dto/slot-config.dto';
 
-/**
- * Defines the shape of an item in the update payload array.
- */
+// ... existing imports and interface ...
+
 interface SlotConfigUpdateItem {
   slot_key: string;
   label: string;
   unit: string;
   active: boolean;
+  source_field?: string | null;
 }
 
-/**
- * Slot Configuration Service
- * Handles device slot (data point) configurations
- */
 @Injectable()
 export class SlotConfigService {
   constructor(private readonly dbService: DatabaseService) {}
 
-  /**
-   * Verifies that the user owns the device.
-   * @param client - The database client.
-   * @param userId - The ID of the user.
-   * @param serialNumber - The serial number of the device.
-   * @throws NotFoundException if the device is not found or the user does not own it.
-   */
+  // ========== existing verifyDeviceOwnership ==========
   private async verifyDeviceOwnership(
     client: any,
     userId: number,
     serialNumber: string,
   ) {
-    const ownerQuery = `
-      SELECT 1 FROM devices 
-      WHERE owner_user_id = $1 AND serial_number = $2
-    `;
-    const ownerResult = await client.query(ownerQuery, [userId, serialNumber]);
+    const ownerResult = await client.query(
+      `SELECT 1 FROM devices 
+       WHERE owner_user_id = $1 AND serial_number = $2`,
+      [userId, serialNumber],
+    );
 
     if (ownerResult.rows.length === 0) {
       throw new NotFoundException('Device not found or access denied');
     }
   }
 
-  /**
-   * Get slot configurations for a device
-   * @param userId - The user's ID to verify ownership
-   * @param serialNumber - Device serial number
-   * @returns Slot configurations as a map
-   */
+  // ========== NEW: Get available fields from device_fields ==========
+  async getAvailableFields(
+    userId: number,
+    serialNumber: string,
+  ): Promise<{ field_name: string; last_seen: string }[]> {
+    if (!serialNumber) {
+      throw new BadRequestException('Serial number is required');
+    }
+
+    const client = await this.dbService.getClient();
+    try {
+      await this.verifyDeviceOwnership(client, userId, serialNumber);
+
+      const result = await client.query(
+        `
+        SELECT field_name, last_seen
+        FROM device_fields
+        WHERE device_serial_number = $1
+        ORDER BY last_seen DESC
+        `,
+        [serialNumber],
+      );
+
+return result.rows.map((row) => row.field_name);    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to fetch available fields: ${error.message}`,
+      );
+    } finally {
+      client.release();
+    }
+  }
+
+  // ========== GET slot config (now includes source_field) ==========
   async getSlotConfig(
     userId: number,
     serialNumber: string,
@@ -64,30 +87,33 @@ export class SlotConfigService {
 
     const client = await this.dbService.getClient();
     try {
-      // First, verify the user owns this device
       await this.verifyDeviceOwnership(client, userId, serialNumber);
 
-      const query = `
-        SELECT slot_key, label, unit, active 
+      const result = await client.query(
+        `
+        SELECT slot_key, label, unit, active, source_field
         FROM slot_configurations 
         WHERE device_serial_number = $1
-      `;
+        `,
+        [serialNumber],
+      );
 
-      const result = await client.query(query, [serialNumber]);
-
-      // Convert array to object map: { data1: {...}, data2: {...} }
       const configMap: SlotConfigResponseDto = {};
       result.rows.forEach((row) => {
         configMap[row.slot_key] = {
           label: row.label,
           unit: row.unit,
           active: row.active ?? true,
+          source_field: row.source_field ?? null,
         };
       });
 
       return configMap;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -98,13 +124,7 @@ export class SlotConfigService {
     }
   }
 
-  /**
-   * Update slot configurations for a device
-   * @param userId - The user's ID to verify ownership
-   * @param serial_number - The device serial number
-   * @param slot_configs - Updated slot configurations as an array of objects
-   * @returns Success message
-   */
+  // ========== UPDATE slot config (now saves source_field) ==========
   async updateSlotConfig(
     userId: number,
     serial_number: string,
@@ -118,38 +138,41 @@ export class SlotConfigService {
 
     try {
       await client.query('BEGIN');
-
-      // First, verify the user owns this device
       await this.verifyDeviceOwnership(client, userId, serial_number);
 
-      // Iterate through each slot configuration and upsert
       for (const config of slot_configs) {
-        const query = `
-          INSERT INTO slot_configurations (device_serial_number, slot_key, label, unit, active, updated_at)
-          VALUES ($1, $2, $3, $4, $5, NOW())
+        await client.query(
+          `
+          INSERT INTO slot_configurations 
+            (device_serial_number, slot_key, label, unit, active, source_field, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, NOW())
           ON CONFLICT (device_serial_number, slot_key) 
           DO UPDATE SET 
             label = EXCLUDED.label,
             unit = EXCLUDED.unit,
             active = EXCLUDED.active,
+            source_field = EXCLUDED.source_field,
             updated_at = NOW();
-        `;
-
-        await client.query(query, [
-          serial_number,
-          config.slot_key,
-          config.label,
-          config.unit,
-          config.active ?? true,
-        ]);
+          `,
+          [
+            serial_number,
+            config.slot_key,
+            config.label,
+            config.unit,
+            config.active ?? true,
+            config.source_field ?? null,
+          ],
+        );
       }
 
       await client.query('COMMIT');
-
       return { message: 'Slot configurations saved successfully' };
     } catch (error) {
       await client.query('ROLLBACK');
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(

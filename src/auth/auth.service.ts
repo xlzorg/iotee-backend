@@ -294,31 +294,28 @@ export class AuthService {
     );
   }
 
-  async getTokens(userId: string, rememberMe: boolean = false): Promise<TokenResponseDto> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        { sub: userId },
-        {
-          secret: this.configService.get<string>('JWT_SECRET_KEY'),
-          expiresIn: '15m',
-        },
-      ),
-      this.jwtService.signAsync(
-        { sub: userId, jti: uuidv4() }, // Add a unique identifier (jti)
-        {
-          secret: this.configService.get<string>('JWT_SECRET_KEY'),
-          expiresIn: rememberMe ? '30d' : '7d',
-        },
-      ),
-    ]);
+async getTokens(userId: string, rememberMe: boolean = false): Promise<TokenResponseDto> {
+  const [accessToken, refreshToken] = await Promise.all([
+    this.jwtService.signAsync(
+      { sub: userId },
+      {
+        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+        expiresIn: '15m',
+      },
+    ),
+    this.jwtService.signAsync(
+      { sub: userId, jti: uuidv4() },
+      {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET_KEY'), // ← FIXED
+        expiresIn: rememberMe ? '30d' : '7d',
+      },
+    ),
+  ]);
 
-    await this.updateRefreshToken(userId, refreshToken);
+  await this.updateRefreshToken(userId, refreshToken);
 
-    return {
-      accessToken,
-      refreshToken,
-    };
-  }
+  return { accessToken, refreshToken };
+}
   
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const client = await this.pool.connect();
@@ -478,15 +475,15 @@ export class AuthService {
     }
   }
 
-  async decodeRefreshToken(token: string): Promise<any> {
-    try {
-      return await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET_KEY'),
-      });
-    } catch (error) {
-      throw new ForbiddenException('Invalid refresh token');
-    }
+async decodeRefreshToken(token: string): Promise<any> {
+  try {
+    return await this.jwtService.verifyAsync(token, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET_KEY'), // ← FIXED
+    });
+  } catch (error) {
+    throw new ForbiddenException('Invalid refresh token');
   }
+}
 
   async logout(userId: string): Promise<void> {
     const client = await this.pool.connect();

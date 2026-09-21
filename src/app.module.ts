@@ -21,8 +21,11 @@ import { DashboardModule } from './dashboard/dashboard.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:
-        process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.dev',
+      envFilePath: [
+        '.env.prod',
+        '.env.dev',
+        '.env',           // fallback
+      ],
     }),
     DatabaseModule,
     AuthModule,

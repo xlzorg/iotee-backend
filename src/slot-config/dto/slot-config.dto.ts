@@ -19,6 +19,8 @@ export class SlotConfigItemDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean = true;
+
+  source_field?: string | null;
 }
 
 /**
